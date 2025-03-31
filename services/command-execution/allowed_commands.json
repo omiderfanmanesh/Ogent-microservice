@@ -1,0 +1,17 @@
+{
+  "commands": [
+    "ls", "echo", "cat", "grep", "find", "pwd", "ps", 
+    "wget", "curl", "ping", "traceroute", "dig", "nslookup", 
+    "python", "python3", "node", "npm", 
+    "mkdir", "touch", "rm", "cp", "mv", "chmod",
+    "tar", "gzip", "zip", "unzip"
+  ],
+  "paths": [
+    "/tmp", 
+    "/home", 
+    "/usr/bin", 
+    "/usr/local/bin", 
+    "/bin", 
+    "/opt"
+  ]
+} 

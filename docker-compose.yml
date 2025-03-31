@@ -1,0 +1,190 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    container_name: ogent-nginx
+    ports:
+      - "8080:80"
+    volumes:
+      - ./services/nginx/default.conf:/etc/nginx/conf.d/default.conf
+    depends_on:
+      - frontend
+      - api-gateway
+    networks:
+      - ogent_network
+
+  frontend:
+    build:
+      context: ./services/frontend
+      dockerfile: Dockerfile
+    container_name: ogent-frontend
+    restart: unless-stopped
+    volumes:
+      - ./services/frontend:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:8080/api
+      - REACT_APP_SOCKET_SERVICE_URL=http://localhost:8080/socket
+      - REACT_APP_COMMAND_SERVICE_URL=http://localhost:8080/command
+    networks:
+      - ogent_network
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    container_name: ogent-api-gateway
+    restart: unless-stopped
+    volumes:
+      - ./services/api-gateway:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - AUTH_SERVICE_URL=http://ogent-auth-service-1:80/api
+      - AGENT_SERVICE_URL=http://agent-service:8000/api
+      - SOCKET_SERVICE_URL=http://socket-service:3002
+      - COMMAND_SERVICE_URL=http://command-execution:5001/api
+    networks:
+      - ogent_network
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    container_name: ogent-auth-service
+    restart: unless-stopped
+    volumes:
+      - ./services/auth-service:/var/www/html
+    environment:
+      - APP_ENV=local
+      - DB_CONNECTION=mysql
+      - DB_HOST=auth-db
+      - DB_PORT=3306
+      - DB_DATABASE=ogent_auth
+      - DB_USERNAME=ogent
+      - DB_PASSWORD=ogent_password
+    depends_on:
+      - auth-db
+    networks:
+      - ogent_network
+
+  auth-db:
+    image: mysql:8.0
+    container_name: ogent-auth-db
+    restart: unless-stopped
+    environment:
+      - MYSQL_DATABASE=ogent_auth
+      - MYSQL_USER=ogent
+      - MYSQL_PASSWORD=ogent_password
+      - MYSQL_ROOT_PASSWORD=root_password
+    volumes:
+      - auth-db-data:/var/lib/mysql
+    networks:
+      - ogent_network
+
+  socket-service:
+    build:
+      context: ./services/socket-service
+      dockerfile: Dockerfile
+    container_name: ogent-socket-service
+    restart: unless-stopped
+    volumes:
+      - ./services/socket-service:/app
+      - /app/node_modules
+    environment:
+      - PORT=3002
+      - FRONTEND_URL=http://localhost
+      - AUTH_SERVICE_URL=http://auth-service:8000/api
+    networks:
+      - ogent_network
+
+  command-execution:
+    build:
+      context: ./services/command-execution
+      dockerfile: Dockerfile
+    container_name: ogent-command-execution
+    restart: unless-stopped
+    ports:
+      - "5001:5000"
+    depends_on:
+      - ubuntu-target
+    volumes:
+      - ./services/command-execution:/app
+      - command-execution-data:/tmp/executions
+    environment:
+      - PORT=5000
+      - SOCKET_SERVICE_URL=http://socket-service:3002
+      - AUTH_SERVICE_URL=http://localhost:8001/api
+      - ALLOWED_COMMANDS_PATH=/app/allowed_commands.json
+      - MAX_EXECUTION_TIME=3600
+      - EXECUTION_DIR=/tmp/executions
+    networks:
+      - ogent_network
+
+  ubuntu-target:
+    image: ubuntu:20.04
+    container_name: ogent-ubuntu-target
+    restart: unless-stopped
+    tty: true
+    networks:
+      - ogent_network
+    volumes:
+      - ubuntu-target-data:/home/ubuntu
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y openssh-server sudo vim curl wget python3 python3-pip nodejs npm git &&
+        mkdir -p /run/sshd && 
+        echo 'root:password' | chpasswd && 
+        sed -i 's/#PermitRootLogin prohibit-password/PermitRootLogin yes/' /etc/ssh/sshd_config && 
+        useradd -m -s /bin/bash ubuntu && 
+        echo 'ubuntu:ubuntu' | chpasswd && 
+        usermod -aG sudo ubuntu && 
+        echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && 
+        /usr/sbin/sshd -D
+      "
+    ports:
+      - "2222:22"  # Map SSH to external port
+
+  # Add agent-service if needed
+  agent-service:
+    build:
+      context: ./services/langchain-agent
+      dockerfile: Dockerfile
+    container_name: ogent-agent-service
+    restart: unless-stopped
+    ports:
+      - "8002:8000"
+    env_file: 
+      - ./services/langchain-agent/.env
+    environment:
+      - DATABASE_URL=postgresql+asyncpg://postgres:postgres@db:5432/langchain_agent
+    depends_on:
+      - db
+    networks:
+      - ogent_network
+
+  db:
+    image: postgres:13
+    container_name: ogent-db
+    restart: unless-stopped
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+      - POSTGRES_DB=langchain_agent
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - ogent_network
+
+networks:
+  ogent_network:
+    driver: bridge
+
+volumes:
+  auth-db-data:
+  command-execution-data:
+  ubuntu-target-data:
+  db-data: 

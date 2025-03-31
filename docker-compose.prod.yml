@@ -1,0 +1,144 @@
+version: '3.8'
+
+services:
+  # API Gateway service
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env.prod
+    environment:
+      - ENV=production
+      - AUTH_SERVICE_URL=http://auth-service:80/api
+      - AGENT_SERVICE_URL=http://agent-service:8000/api
+      - SOCKET_SERVICE_URL=http://socket-service:3000
+      - COMMAND_SERVICE_URL=http://command-execution:5000/api
+    networks:
+      - ogent_network
+    depends_on:
+      - auth-service
+      - agent-service
+      - socket-service
+      - command-execution
+
+  # Auth service
+  auth-service:
+    build:
+      context: ./services/auth-service
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - APP_ENV=production
+      - DB_CONNECTION=mysql
+      - DB_HOST=auth-db
+      - DB_DATABASE=ogent_auth
+      - DB_USERNAME=ogent
+      - DB_PASSWORD=${AUTH_DB_PASSWORD}
+    depends_on:
+      - auth-db
+    networks:
+      - ogent_network
+
+  # Agent service
+  agent-service:
+    build:
+      context: ./services/langchain-agent
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+      - DATABASE_URL=postgresql+asyncpg://postgres:${POSTGRES_PASSWORD}@db:5432/langchain_agent
+      - DEBUG=False
+    depends_on:
+      - db
+    networks:
+      - ogent_network
+
+  # Socket service
+  socket-service:
+    build:
+      context: ./services/socket-service
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - PORT=3000
+      - NODE_ENV=production
+    networks:
+      - ogent_network
+
+  # Command execution service
+  command-execution:
+    build:
+      context: ./services/command-execution
+      dockerfile: Dockerfile
+    restart: always
+    environment:
+      - PORT=5000
+      - ALLOWED_COMMANDS_PATH=/app/allowed_commands.json
+      - MAX_EXECUTION_TIME=300
+    depends_on:
+      - ubuntu-target
+    networks:
+      - ogent_network
+
+  # Ubuntu target for command execution
+  ubuntu-target:
+    image: ubuntu:20.04
+    restart: always
+    tty: true
+    networks:
+      - ogent_network
+    volumes:
+      - ubuntu-target-data:/home/ubuntu
+    command: >
+      bash -c "
+        apt-get update && 
+        apt-get install -y openssh-server sudo vim curl wget python3 python3-pip nodejs npm git &&
+        mkdir -p /run/sshd && 
+        useradd -m -s /bin/bash ubuntu && 
+        echo 'ubuntu:${UBUNTU_PASSWORD}' | chpasswd && 
+        usermod -aG sudo ubuntu && 
+        echo 'ubuntu ALL=(ALL) NOPASSWD:ALL' >> /etc/sudoers && 
+        /usr/sbin/sshd -D
+      "
+
+  # Databases
+  auth-db:
+    image: mysql:8.0
+    restart: always
+    environment:
+      - MYSQL_DATABASE=ogent_auth
+      - MYSQL_USER=ogent
+      - MYSQL_PASSWORD=${AUTH_DB_PASSWORD}
+      - MYSQL_ROOT_PASSWORD=${AUTH_DB_ROOT_PASSWORD}
+    volumes:
+      - auth-db-data:/var/lib/mysql
+    networks:
+      - ogent_network
+
+  db:
+    image: postgres:13
+    restart: always
+    environment:
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - POSTGRES_DB=langchain_agent
+    volumes:
+      - db-data:/var/lib/postgresql/data
+    networks:
+      - ogent_network
+
+# Networks
+networks:
+  ogent_network:
+    driver: bridge
+
+# Volumes
+volumes:
+  auth-db-data:
+  db-data:
+  ubuntu-target-data: 

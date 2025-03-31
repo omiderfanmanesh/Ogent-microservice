@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "3000:80"
+    volumes:
+      - ./:/app
+      - /app/node_modules
+    environment:
+      - NODE_ENV=development
+      - REACT_APP_API_URL=http://localhost:8080/api
+      - REACT_APP_AUTH_URL=http://localhost:8080/auth
+    networks:
+      - ogent-network
+
+networks:
+  ogent-network:
+    external: true 

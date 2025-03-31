@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  api-gateway:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: always
+    ports:
+      - "8080:8080"
+    environment:
+      - DEBUG=True
+      - SECRET_KEY=change-me-in-production
+      - AUTH_SERVICE_URL=http://auth-service:8000
+      - MAIN_APP_URL=http://app:8000
+      - SOCKET_SERVICE_URL=http://socket-service:8000
+      - ALLOW_ORIGINS=http://localhost:3000,http://localhost:8000,http://localhost:8080
+    volumes:
+      - ./:/app
+    networks:
+      - ogent-network
+
+networks:
+  ogent-network:
+    external: true 

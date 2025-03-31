@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Help - Ogent</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        h2 {
+            color: #3498db;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        h3 {
+            color: #2c3e50;
+            margin-top: 20px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow: auto;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        code {
+            background-color: #f8f8f8;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .nav {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .nav a {
+            margin-right: 15px;
+        }
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .example {
+            background-color: #f0f7ff;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #777;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <a href="index.html">Home</a>
+        <a href="login.html">Login</a>
+        <a href="register.html">Register</a>
+        <a href="websocket-client.html">WebSocket Client</a>
+    </div>
+
+    <header>
+        <h1>Ogent Help Center</h1>
+        <p>Learn how to use the Ogent LangChain Agent Service</p>
+    </header>
+
+    <div class="section">
+        <h2 id="getting-started">Getting Started</h2>
+        <p>Ogent is a powerful API for creating and executing LangChain agents. This guide will help you understand how to use the service effectively.</p>
+        
+        <h3>Key Concepts</h3>
+        <ul>
+            <li><strong>Agents</strong>: AI assistants that can perform tasks using natural language</li>
+            <li><strong>Executions</strong>: Specific instances of agent runs with inputs and outputs</li>
+            <li><strong>WebSocket Streaming</strong>: Real-time updates during agent execution</li>
+        </ul>
+    </div>
+
+    <div class="section">
+        <h2 id="authentication">Authentication</h2>
+        <p>All API endpoints require authentication with a JWT token. Here's how to authenticate:</p>
+        
+        <h3>Register a New User</h3>
+        <p>Create a new account at the <a href="register.html">registration page</a> or using the API:</p>
+        <pre>curl -X POST "http://localhost:8000/api/v1/auth/register" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "username": "yourname",
+        "email": "your@email.com",
+        "password": "yourpassword"
+    }'</pre>
+        
+        <h3>Obtain Access Token</h3>
+        <p>Get your access token from the <a href="login.html">login page</a> or using the API:</p>
+        <pre>curl -X POST "http://localhost:8000/api/v1/auth/token" \
+    --form "username=yourname" \
+    --form "password=yourpassword"</pre>
+        
+        <div class="example">
+            <p>The token will be returned as a JSON response:</p>
+            <pre>{
+    "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "token_type": "bearer"
+}</pre>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2 id="using-agents">Using Agents</h2>
+        
+        <h3>Creating an Agent</h3>
+        <p>Create a new agent by specifying its name, type, and configuration:</p>
+        <pre>curl -X POST "http://localhost:8000/api/v1/agents" \
+    -H "Authorization: Bearer YOUR_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "name": "Research Assistant",
+        "description": "An agent that helps with research tasks",
+        "agent_type": "conversational",
+        "config": {
+            "model_name": "gpt-4o",
+            "temperature": 0.7,
+            "max_tokens": 1000
+        }
+    }'</pre>
+        
+        <h3>Agent Types</h3>
+        <table>
+            <tr>
+                <th>Type</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>conversational</td>
+                <td>General-purpose agent for having conversations and answering questions</td>
+            </tr>
+            <tr>
+                <td>command</td>
+                <td>Specialized agent that can execute system commands (requires specific permissions)</td>
+            </tr>
+        </table>
+        
+        <h3>Executing an Agent</h3>
+        <p>Send a request to the agent with your input:</p>
+        <pre>curl -X POST "http://localhost:8000/api/v1/agents/{agent_id}/execute" \
+    -H "Authorization: Bearer YOUR_TOKEN" \
+    -H "Content-Type: application/json" \
+    -d '{
+        "input": "What is quantum computing?",
+        "stream": false
+    }'</pre>
+        
+        <h3>Agent Permissions</h3>
+        <p>For command agents, you can configure permissions:</p>
+        <pre>"permissions": {
+    "can_execute_commands": true,
+    "allowed_commands": ["ls", "echo", "cat"],
+    "allowed_paths": ["/tmp", "/home/user/docs"],
+    "network_access": false,
+    "memory_limit_mb": 500
+}</pre>
+    </div>
+
+    <div class="section">
+        <h2 id="websocket">WebSocket Streaming</h2>
+        <p>For real-time updates during agent execution, you can use WebSockets:</p>
+        
+        <h3>Connecting to a WebSocket</h3>
+        <p>Connect to the following WebSocket endpoint:</p>
+        <code>ws://localhost:8000/api/v1/executions/{agent_id}/stream?token=YOUR_TOKEN</code>
+        
+        <p>You can try this out using our <a href="websocket-client.html">WebSocket Client</a>.</p>
+        
+        <h3>Event Types</h3>
+        <table>
+            <tr>
+                <th>Event Type</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>status</td>
+                <td>Updates about the execution status (started, running, completed, failed)</td>
+            </tr>
+            <tr>
+                <td>step</td>
+                <td>Individual steps the agent is taking during execution</td>
+            </tr>
+            <tr>
+                <td>command</td>
+                <td>Information about commands being executed (for command agents)</td>
+            </tr>
+            <tr>
+                <td>completion</td>
+                <td>Text generated by the language model</td>
+            </tr>
+            <tr>
+                <td>error</td>
+                <td>Error information if something goes wrong</td>
+            </tr>
+            <tr>
+                <td>end</td>
+                <td>Indicates the end of the streaming session</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="section">
+        <h2 id="cli">Command-Line Interface</h2>
+        <p>Ogent comes with a command-line interface for quick interaction:</p>
+        
+        <h3>List Agents</h3>
+        <pre>python -m app.commands.cli list --username admin --password admin123</pre>
+        
+        <h3>Create an Agent</h3>
+        <pre>python -m app.commands.cli create \
+    --name "Research Bot" \
+    --description "A bot for research tasks" \
+    --type conversational \
+    --model gpt-4o</pre>
+        
+        <h3>Execute an Agent</h3>
+        <pre>python -m app.commands.cli execute \
+    --agent-id 123e4567-e89b-12d3-a456-426614174000 \
+    --input "What is the capital of France?" \
+    --stream</pre>
+    </div>
+
+    <div class="section">
+        <h2 id="api-reference">API Reference</h2>
+        <p>For detailed API documentation, visit the <a href="/api/v1/docs">Swagger UI</a> when the server is running.</p>
+        
+        <h3>Main Endpoints</h3>
+        <table>
+            <tr>
+                <th>Endpoint</th>
+                <th>Method</th>
+                <th>Description</th>
+            </tr>
+            <tr>
+                <td>/api/v1/agents</td>
+                <td>GET</td>
+                <td>List all agents</td>
+            </tr>
+            <tr>
+                <td>/api/v1/agents</td>
+                <td>POST</td>
+                <td>Create a new agent</td>
+            </tr>
+            <tr>
+                <td>/api/v1/agents/{agent_id}</td>
+                <td>GET</td>
+                <td>Get agent details</td>
+            </tr>
+            <tr>
+                <td>/api/v1/agents/{agent_id}/execute</td>
+                <td>POST</td>
+                <td>Execute an agent</td>
+            </tr>
+            <tr>
+                <td>/api/v1/executions</td>
+                <td>GET</td>
+                <td>List all executions</td>
+            </tr>
+            <tr>
+                <td>/api/v1/executions/{execution_id}</td>
+                <td>GET</td>
+                <td>Get execution details</td>
+            </tr>
+            <tr>
+                <td>/api/v1/auth/register</td>
+                <td>POST</td>
+                <td>Register a new user</td>
+            </tr>
+            <tr>
+                <td>/api/v1/auth/token</td>
+                <td>POST</td>
+                <td>Get authentication token</td>
+            </tr>
+        </table>
+    </div>
+
+    <div class="footer">
+        <p>Copyright © 2023 Ogent Contributors. All rights reserved.</p>
+        <p><a href="https://github.com/yourusername/ogent" target="_blank">GitHub Repository</a></p>
+    </div>
+</body>
+</html> 

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ogent - LangChain Agent Service</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f7f9fc;
+        }
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        h1 {
+            color: #2c3e50;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            color: #7f8c8d;
+            font-size: 1.2em;
+            margin-top: 0;
+        }
+        h2 {
+            color: #3498db;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+            margin-top: 30px;
+        }
+        a {
+            color: #3498db;
+            text-decoration: none;
+        }
+        a:hover {
+            text-decoration: underline;
+        }
+        pre {
+            background-color: #f8f8f8;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px;
+            overflow: auto;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        code {
+            background-color: #f8f8f8;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Courier New', Courier, monospace;
+        }
+        .nav {
+            background-color: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            display: flex;
+            justify-content: space-between;
+        }
+        .nav-left a {
+            margin-right: 15px;
+        }
+        .nav-right a {
+            margin-left: 15px;
+        }
+        .features {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            margin: 30px 0;
+        }
+        .feature {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            width: calc(50% - 50px);
+        }
+        .feature h3 {
+            color: #2c3e50;
+            margin-top: 0;
+        }
+        .cta {
+            background-color: #3498db;
+            color: white;
+            border-radius: 4px;
+            padding: 12px 20px;
+            font-size: 16px;
+            display: inline-block;
+            margin-top: 10px;
+            transition: background-color 0.3s;
+        }
+        .cta:hover {
+            background-color: #2980b9;
+            text-decoration: none;
+        }
+        .section {
+            background-color: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .footer {
+            text-align: center;
+            margin-top: 40px;
+            color: #777;
+            font-size: 14px;
+        }
+        @media (max-width: 800px) {
+            .feature {
+                width: 100%;
+            }
+            .nav {
+                flex-direction: column;
+            }
+            .nav-left, .nav-right {
+                text-align: center;
+                margin: 5px 0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="nav">
+        <div class="nav-left">
+            <a href="index.html">Home</a>
+            <a href="help.html">Documentation</a>
+            <a href="/api/v1/docs">API Reference</a>
+        </div>
+        <div class="nav-right">
+            <a href="login.html">Login</a>
+            <a href="register.html">Register</a>
+        </div>
+    </div>
+
+    <header>
+        <h1>Ogent</h1>
+        <p class="subtitle">A powerful LangChain Agent Service</p>
+        <p>Build, deploy, and manage AI agents with ease</p>
+        <a href="register.html" class="cta">Get Started</a>
+    </header>
+
+    <div class="features">
+        <div class="feature">
+            <h3>Conversational Agents</h3>
+            <p>Create AI agents that can have natural language conversations and respond to user queries using powerful language models like GPT-4 and Claude.</p>
+        </div>
+        <div class="feature">
+            <h3>Command Execution</h3>
+            <p>Build agents that can execute system commands with fine-grained permission controls, allowing for safe automation of tasks.</p>
+        </div>
+        <div class="feature">
+            <h3>Real-time Streaming</h3>
+            <p>Get real-time updates during agent execution via WebSockets, allowing for responsive user interfaces and progress tracking.</p>
+            <a href="websocket-client.html">Try WebSocket Demo</a>
+        </div>
+        <div class="feature">
+            <h3>Execution History</h3>
+            <p>Track and review all agent executions, including steps, commands, and results for auditing and improvement.</p>
+        </div>
+    </div>
+
+    <div class="section">
+        <h2>Quick Start</h2>
+        <p>Create your first agent with just a few commands:</p>
+        <pre>
+# Create an agent
+curl -X POST "http://localhost:8000/api/v1/agents" \
+  -H "Authorization: Bearer your-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "My Assistant",
+    "agent_type": "conversational",
+    "description": "A helpful assistant",
+    "config": {
+      "model_name": "gpt-4o",
+      "temperature": 0.7
+    }
+  }'
+
+# Execute the agent
+curl -X POST "http://localhost:8000/api/v1/agents/{agent_id}/execute" \
+  -H "Authorization: Bearer your-token" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "input": "What is the capital of France?",
+    "stream": false
+  }'</pre>
+        
+        <p>Or try using our command-line interface:</p>
+        <pre>
+# List all agents
+python -m app.commands.cli list
+
+# Execute an agent
+python -m app.commands.cli execute \
+  --agent-id {agent_id} \
+  --input "What is the capital of France?" \
+  --stream</pre>
+    </div>
+
+    <div class="section">
+        <h2>WebSocket Streaming</h2>
+        <p>For real-time updates during agent execution, connect to:</p>
+        <code>ws://localhost:8000/api/v1/executions/{agent_id}/stream?token=your-token</code>
+        <p>This will provide real-time updates as your agent executes, including status changes, steps, command execution, and generated text.</p>
+        <a href="websocket-client.html" class="cta">Try WebSocket Client</a>
+    </div>
+
+    <div class="section">
+        <h2>Learn More</h2>
+        <p>Explore our resources to learn more about Ogent:</p>
+        <ul>
+            <li><a href="help.html">Documentation</a> - Comprehensive guide to using Ogent</li>
+            <li><a href="/api/v1/docs">API Reference</a> - Detailed API documentation with Swagger UI</li>
+            <li><a href="https://github.com/yourusername/ogent">GitHub Repository</a> - Contribute to the project</li>
+        </ul>
+    </div>
+
+    <div class="footer">
+        <p>Copyright © 2023 Ogent Contributors. All rights reserved.</p>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Check if user is logged in
+            const token = localStorage.getItem('access_token');
+            if (token) {
+                const navRight = document.querySelector('.nav-right');
+                navRight.innerHTML = '<a href="/api/v1/docs">My Account</a> <a href="#" id="logout">Logout</a>';
+                
+                // Add logout functionality
+                document.getElementById('logout').addEventListener('click', function(e) {
+                    e.preventDefault();
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('token_type');
+                    window.location.reload();
+                });
+            }
+        });
+    </script>
+</body>
+</html> 

@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Mermaid Test</title>
+  <script src="../node_modules/mermaid/dist/mermaid.min.js"></script>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+      line-height: 1.6;
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 20px;
+    }
+    .mermaid {
+      margin: 20px 0;
+      padding: 10px;
+      border-radius: 5px;
+      background-color: #f9f9f9;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    h1 {
+      margin-bottom: 30px;
+      border-bottom: 1px solid #eaecef;
+      padding-bottom: 10px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Mermaid Diagram Test</h1>
+  
+  <h2>Deployment Architecture</h2>
+  <div class="mermaid">
+    flowchart TB
+      subgraph "User Layer"
+        Browser["Web Browser"]
+      end
+
+      subgraph "Edge Layer"
+        CDN["CDN\n(cloudFront)"]
+        WAF["Web Application Firewall"]
+        LoadBalancer["Load Balancer\n(NGINX/ALB)"]
+      end
+
+      Browser -->|HTTPS| CDN
+      CDN -->|HTTPS| WAF
+      WAF -->|HTTPS| LoadBalancer
+  </div>
+
+  <script>
+    mermaid.initialize({
+      startOnLoad: true,
+      theme: 'default',
+      securityLevel: 'loose'
+    });
+  </script>
+</body>
+</html> 

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta charset="UTF-8">
+  <title>Ogent Documentation</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/docsify@4/themes/vue.css">
+  <style>
+    .sidebar-nav ul li ul {
+      margin-left: 20px;
+    }
+    .markdown-section {
+      max-width: 900px;
+    }
+    .mermaid {
+      margin: 20px 0;
+      text-align: center;
+      background-color: white;
+      padding: 10px;
+      border-radius: 5px;
+      overflow: auto;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+    }
+    .mermaid-container {
+      position: relative;
+      width: 100%;
+      margin: 1rem 0;
+      overflow: hidden;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      border-radius: 5px;
+    }
+    .mermaid-container iframe {
+      width: 100%;
+      height: 500px;
+      border: none;
+    }
+    /* Code Copy Button Styles */
+    pre {
+      position: relative;
+    }
+    .code-copy-btn {
+      position: absolute;
+      top: 0;
+      right: 0;
+      padding: 4px 8px;
+      margin: 8px;
+      background-color: rgba(0, 0, 0, 0.07);
+      color: #525252;
+      border: none;
+      border-radius: 4px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      z-index: 1;
+    }
+    .code-copy-btn:hover {
+      background-color: rgba(0, 0, 0, 0.15);
+    }
+    .code-copy-btn.copied {
+      background-color: #42b983;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div id="app"></div>
+  <script>
+    window.$docsify = {
+      name: 'Ogent Documentation',
+      repo: '',
+      loadSidebar: true,
+      alias: {
+        '/.*/_sidebar.md': '/_sidebar.md'
+      },
+      subMaxLevel: 3,
+      auto2top: true,
+      relativePath: false,
+      routerMode: 'hash',
+      notFoundPage: '404.md',
+      search: {
+        maxAge: 86400000,
+        paths: 'auto',
+        placeholder: 'Search',
+        noData: 'No Results!',
+        depth: 6
+      },
+      markdown: {
+        renderer: {
+          code: function(code, lang) {
+            if (lang === 'mermaid') {
+              return '<div class="mermaid">' + code + '</div>';
+            }
+            // Remove bash language identifier from code blocks
+            if (lang === 'bash') {
+              lang = '';
+            }
+            return this.origin.code.call(this, code, lang);
+          }
+        }
+      }
+    }
+  </script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/search.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/docsify@4/lib/plugins/zoom-image.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-bash.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-php.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-json.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/prismjs@1/components/prism-yaml.min.js"></script>
+  <script src="../node_modules/mermaid/dist/mermaid.min.js"></script>
+  <script>
+    // Initialize mermaid with a simple configuration
+    mermaid.initialize({
+      startOnLoad: true,
+      securityLevel: 'loose',
+      theme: 'default'
+    });
+
+    // Docsify plugin for mermaid
+    window.$docsify.plugins = [].concat(function(hook) {
+      hook.afterEach(function(html) {
+        return html;
+      });
+      
+      hook.doneEach(function() {
+        // Re-render Mermaid diagrams after page load
+        setTimeout(function() {
+          document.querySelectorAll('.mermaid').forEach(function(el) {
+            try {
+              if (el.offsetWidth > 0) {
+                mermaid.init(undefined, el);
+              }
+            } catch (err) {
+              console.error("Mermaid error:", err);
+            }
+          });
+        }, 1000);
+
+        // Add copy buttons to code blocks
+        addCopyButtons();
+      });
+    }, window.$docsify.plugins);
+
+    // Function to add copy buttons to code blocks
+    function addCopyButtons() {
+      const codeBlocks = document.querySelectorAll('pre > code');
+      
+      codeBlocks.forEach(codeBlock => {
+        // Check if button already exists
+        if (codeBlock.parentNode.querySelector('.code-copy-btn')) {
+          return;
+        }
+        
+        // Create the copy button
+        const copyButton = document.createElement('button');
+        copyButton.className = 'code-copy-btn';
+        copyButton.textContent = 'Copy';
+        
+        // Add the event listener
+        copyButton.addEventListener('click', function() {
+          // Get the text content
+          const code = codeBlock.textContent;
+          
+          // Copy the text to clipboard
+          navigator.clipboard.writeText(code).then(function() {
+            // UI feedback
+            copyButton.textContent = 'Copied!';
+            copyButton.classList.add('copied');
+            
+            // Reset after 2 seconds
+            setTimeout(function() {
+              copyButton.textContent = 'Copy';
+              copyButton.classList.remove('copied');
+            }, 2000);
+          }).catch(function(err) {
+            console.error('Failed to copy code: ', err);
+            copyButton.textContent = 'Error!';
+            setTimeout(function() {
+              copyButton.textContent = 'Copy';
+            }, 2000);
+          });
+        });
+        
+        // Append the button to the code block
+        codeBlock.parentNode.appendChild(copyButton);
+      });
+    }
+  </script>
+</body>
+</html>

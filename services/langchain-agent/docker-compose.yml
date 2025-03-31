@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: langchain_agent
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  langchain-agent:
+    build: .
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      - DB_HOST=db
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=langchain_agent
+      - COMMAND_SERVICE_URL=http://command-service:8001/api/v1
+      - OPENAI_API_KEY=${OPENAI_API_KEY}
+    ports:
+      - "8000:8000"
+    volumes:
+      - .:/app
+    command: >
+      bash -c "alembic upgrade head && 
+               python -m uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload"
+
+  command-service:
+    image: ogent/command-service:latest
+    ports:
+      - "8001:8001"
+    environment:
+      - LOG_LEVEL=INFO
+      - NODE_ENV=development
+    volumes:
+      - command_service_data:/data
+
+volumes:
+  postgres_data:
+  command_service_data: 

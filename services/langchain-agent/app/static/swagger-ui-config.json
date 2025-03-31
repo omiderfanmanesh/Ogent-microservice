@@ -1,0 +1,28 @@
+{
+  "deepLinking": true,
+  "displayOperationId": true,
+  "defaultModelsExpandDepth": 3,
+  "defaultModelExpandDepth": 3,
+  "defaultModelRendering": "model",
+  "displayRequestDuration": true,
+  "docExpansion": "list",
+  "filter": true,
+  "showExtensions": false,
+  "showCommonExtensions": true,
+  "supportedSubmitMethods": [
+    "get",
+    "put",
+    "post",
+    "delete",
+    "options",
+    "head",
+    "patch",
+    "trace"
+  ],
+  "syntaxHighlight": {
+    "activate": true,
+    "theme": "monokai"
+  },
+  "tryItOutEnabled": true,
+  "persistAuthorization": true
+} 

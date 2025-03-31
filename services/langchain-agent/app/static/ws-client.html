@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LangChain Agent WebSocket Client</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        h1 {
+            color: #333;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input, textarea {
+            width: 100%;
+            padding: 8px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #4CAF50;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        button:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+        #output {
+            border: 1px solid #ddd;
+            padding: 10px;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            background-color: #f9f9f9;
+            border-radius: 4px;
+            white-space: pre-wrap;
+        }
+        .logs {
+            color: #666;
+            font-family: monospace;
+        }
+        .error {
+            color: red;
+        }
+        .success {
+            color: green;
+        }
+        .thought {
+            color: #6633cc;
+        }
+        .action {
+            color: #0066cc;
+        }
+        .observation {
+            color: #cc6600;
+        }
+        .answer {
+            color: #007700;
+            font-weight: bold;
+        }
+        .command {
+            background-color: #f0f0f0;
+            padding: 5px;
+            border-radius: 4px;
+            margin: 5px 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>LangChain Agent WebSocket Client</h1>
+    
+    <div class="container">
+        <div class="form-group">
+            <label for="apiKey">API Key:</label>
+            <input type="text" id="apiKey" placeholder="Enter your API key">
+        </div>
+        
+        <div class="form-group">
+            <label for="agentId">Agent ID:</label>
+            <input type="text" id="agentId" placeholder="Enter agent ID">
+        </div>
+        
+        <div class="form-group">
+            <label for="userInput">User Input:</label>
+            <textarea id="userInput" rows="3" placeholder="Enter your message here..."></textarea>
+        </div>
+        
+        <div class="form-group">
+            <button id="connectBtn">Connect</button>
+            <button id="sendBtn" disabled>Send</button>
+            <button id="cancelBtn" disabled>Cancel</button>
+            <button id="disconnectBtn" disabled>Disconnect</button>
+            <button id="clearBtn">Clear Output</button>
+        </div>
+        
+        <div class="form-group">
+            <label for="output">Output:</label>
+            <div id="output" class="logs"></div>
+        </div>
+    </div>
+
+    <script>
+        let socket = null;
+        let currentExecutionId = null;
+        
+        // DOM elements
+        const apiKeyInput = document.getElementById('apiKey');
+        const agentIdInput = document.getElementById('agentId');
+        const userInput = document.getElementById('userInput');
+        const connectBtn = document.getElementById('connectBtn');
+        const sendBtn = document.getElementById('sendBtn');
+        const cancelBtn = document.getElementById('cancelBtn');
+        const disconnectBtn = document.getElementById('disconnectBtn');
+        const clearBtn = document.getElementById('clearBtn');
+        const output = document.getElementById('output');
+        
+        // Connect to WebSocket
+        connectBtn.addEventListener('click', () => {
+            const apiKey = apiKeyInput.value.trim();
+            const agentId = agentIdInput.value.trim();
+            
+            if (!apiKey || !agentId) {
+                log('API key and Agent ID are required', 'error');
+                return;
+            }
+            
+            // Disconnect existing connection if any
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+            
+            // Create new WebSocket connection
+            const url = `${window.location.protocol === 'https:' ? 'wss:' : 'ws:'}//${window.location.host}/api/v1/ws/agent/${agentId}?api_key=${apiKey}`;
+            
+            try {
+                socket = new WebSocket(url);
+                
+                // WebSocket event handlers
+                socket.onopen = () => {
+                    log('WebSocket connection established', 'success');
+                    connectBtn.disabled = true;
+                    sendBtn.disabled = false;
+                    disconnectBtn.disabled = false;
+                };
+                
+                socket.onmessage = (event) => {
+                    try {
+                        const data = JSON.parse(event.data);
+                        handleMessage(data);
+                    } catch (error) {
+                        log(`Error parsing message: ${error}`, 'error');
+                    }
+                };
+                
+                socket.onclose = () => {
+                    log('WebSocket connection closed', 'logs');
+                    connectBtn.disabled = false;
+                    sendBtn.disabled = true;
+                    cancelBtn.disabled = true;
+                    disconnectBtn.disabled = true;
+                    socket = null;
+                    currentExecutionId = null;
+                };
+                
+                socket.onerror = (error) => {
+                    log(`WebSocket error: ${error}`, 'error');
+                };
+            } catch (error) {
+                log(`Error creating WebSocket: ${error}`, 'error');
+            }
+        });
+        
+        // Send user input
+        sendBtn.addEventListener('click', () => {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                log('WebSocket is not connected', 'error');
+                return;
+            }
+            
+            const input = userInput.value.trim();
+            if (!input) {
+                log('Input is required', 'error');
+                return;
+            }
+            
+            const message = {
+                type: 'execute',
+                input: input,
+                metadata: {
+                    source: 'web-client',
+                    timestamp: new Date().toISOString()
+                }
+            };
+            
+            socket.send(JSON.stringify(message));
+            log(`Sent: ${input}`, 'logs');
+            userInput.value = '';
+        });
+        
+        // Cancel execution
+        cancelBtn.addEventListener('click', () => {
+            if (!socket || socket.readyState !== WebSocket.OPEN) {
+                log('WebSocket is not connected', 'error');
+                return;
+            }
+            
+            if (!currentExecutionId) {
+                log('No active execution to cancel', 'error');
+                return;
+            }
+            
+            const message = {
+                type: 'cancel',
+                execution_id: currentExecutionId
+            };
+            
+            socket.send(JSON.stringify(message));
+            log(`Requested cancellation for execution: ${currentExecutionId}`, 'logs');
+        });
+        
+        // Disconnect WebSocket
+        disconnectBtn.addEventListener('click', () => {
+            if (socket) {
+                socket.close();
+                socket = null;
+            }
+        });
+        
+        // Clear output
+        clearBtn.addEventListener('click', () => {
+            output.innerHTML = '';
+        });
+        
+        // Handle incoming WebSocket messages
+        function handleMessage(data) {
+            if (!data.type) {
+                log(`Unknown message format: ${JSON.stringify(data)}`, 'error');
+                return;
+            }
+            
+            switch (data.type) {
+                case 'execution_started':
+                    currentExecutionId = data.execution_id;
+                    cancelBtn.disabled = false;
+                    log(`Execution started: ${data.execution_id}`, 'success');
+                    break;
+                
+                case 'execution_canceled':
+                    log(`Execution canceled: ${data.execution_id}`, 'logs');
+                    currentExecutionId = null;
+                    cancelBtn.disabled = true;
+                    break;
+                
+                case 'status':
+                    log(`Status: ${data.status}`, 'logs');
+                    if (data.output) {
+                        log(`Output: ${data.output}`, 'answer');
+                    }
+                    if (data.status === 'completed' || data.status === 'failed' || data.status === 'canceled') {
+                        currentExecutionId = null;
+                        cancelBtn.disabled = true;
+                        if (data.tokens_used) {
+                            log(`Tokens used: ${data.tokens_used}`, 'logs');
+                        }
+                    }
+                    break;
+                
+                case 'step':
+                    const stepType = data.step_type;
+                    if (stepType === 'thought') {
+                        log(`Thought: ${data.content}`, 'thought');
+                    } else if (stepType === 'action') {
+                        log(`Action: ${data.content}`, 'action');
+                    } else if (stepType === 'observation') {
+                        log(`Observation: ${data.content}`, 'observation');
+                    } else if (stepType === 'final_answer') {
+                        log(`Answer: ${data.content}`, 'answer');
+                    } else {
+                        log(`${stepType}: ${data.content}`, 'logs');
+                    }
+                    break;
+                
+                case 'command':
+                    const commandEl = document.createElement('div');
+                    commandEl.className = 'command';
+                    commandEl.innerHTML = `<strong>Command:</strong> ${data.command}<br>`;
+                    
+                    if (data.status) {
+                        commandEl.innerHTML += `<strong>Status:</strong> ${data.status}<br>`;
+                    }
+                    
+                    if (data.exit_code !== undefined && data.exit_code !== null) {
+                        commandEl.innerHTML += `<strong>Exit code:</strong> ${data.exit_code}<br>`;
+                    }
+                    
+                    if (data.stdout) {
+                        commandEl.innerHTML += `<strong>Output:</strong><pre>${data.stdout}</pre>`;
+                    }
+                    
+                    if (data.stderr) {
+                        commandEl.innerHTML += `<strong>Error:</strong><pre>${data.stderr}</pre>`;
+                    }
+                    
+                    output.appendChild(commandEl);
+                    output.scrollTop = output.scrollHeight;
+                    break;
+                
+                case 'error':
+                    log(`Error: ${data.error}`, 'error');
+                    if (data.execution_id === currentExecutionId) {
+                        currentExecutionId = null;
+                        cancelBtn.disabled = true;
+                    }
+                    break;
+                
+                case 'end':
+                    log('Stream ended', 'logs');
+                    if (currentExecutionId) {
+                        currentExecutionId = null;
+                        cancelBtn.disabled = true;
+                    }
+                    break;
+                
+                default:
+                    log(`Unknown message type: ${data.type}`, 'logs');
+                    log(JSON.stringify(data, null, 2), 'logs');
+            }
+        }
+        
+        // Log to output
+        function log(message, type = 'logs') {
+            const logElement = document.createElement('div');
+            logElement.className = type;
+            logElement.textContent = message;
+            output.appendChild(logElement);
+            output.scrollTop = output.scrollHeight;
+        }
+    </script>
+</body>
+</html> 

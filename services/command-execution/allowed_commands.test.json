@@ -1,0 +1,10 @@
+{
+  "commands": [
+    "ls", "echo", "cat", "grep", "find", "pwd", "ps", 
+    "date", "uname", "whoami", "id", "uptime"
+  ],
+  "paths": [
+    "/tmp", 
+    "/home/ubuntu"
+  ]
+} 
