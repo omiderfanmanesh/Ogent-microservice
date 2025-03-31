@@ -87,7 +87,7 @@ async def create_agent(
 async def list_agents(
     user_id: CurrentUser = Depends(get_current_user),
     agent_service: AgentService = Depends(get_agent_service),
-    skip: int = Query(0, ge=0),
+    offset: int = Query(0, ge=0),
     limit: int = Query(10, ge=1, le=100),
     agent_type: Optional[str] = Query(None),
 ):
@@ -97,7 +97,7 @@ async def list_agents(
     Args:
         user_id: Current user ID
         agent_service: Agent service
-        skip: Number of agents to skip
+        offset: Number of agents to skip
         limit: Maximum number of agents to return
         agent_type: Optional filter by agent type
         
@@ -112,26 +112,27 @@ async def list_agents(
                 agent_type_enum = AgentType(agent_type)
             except ValueError:
                 # Invalid agent type, return empty list
-                return AgentList(items=[], total=0, skip=skip, limit=limit)
+                return AgentList(items=[], total=0, skip=offset, limit=limit)
         
         # Get agents
-        agents = await agent_service.list_agents(
+        agents, total = await agent_service.agent_repository.list(
             user_id=user_id,
             agent_type=agent_type_enum,
-            skip=skip,
+            offset=offset,
             limit=limit
         )
         
         # Get total count
-        total = await agent_service.count_agents(
-            user_id=user_id,
-            agent_type=agent_type_enum
-        )
+        if total is None:
+            total = await agent_service.agent_repository.count(
+                user_id=user_id,
+                agent_type=agent_type_enum
+            )
         
         return AgentList(
             items=agents,
             total=total,
-            skip=skip,
+            skip=offset,
             limit=limit
         )
     except Exception as e:

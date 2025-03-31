@@ -92,7 +92,7 @@ class AgentService:
         self, 
         user_id: Optional[str] = None,
         agent_type: Optional[str] = None,
-        skip: int = 0, 
+        offset: int = 0, 
         limit: int = 100
     ) -> List[Agent]:
         """
@@ -101,7 +101,7 @@ class AgentService:
         Args:
             user_id: Optional user ID to filter by creator.
             agent_type: Optional agent type to filter by.
-            skip: Number of records to skip (pagination).
+            offset: Number of records to skip (pagination).
             limit: Maximum number of records to return (pagination).
             
         Returns:
@@ -110,7 +110,7 @@ class AgentService:
         return await self.agent_repository.list(
             user_id=user_id,
             agent_type=agent_type,
-            skip=skip,
+            offset=offset,
             limit=limit
         )
     

@@ -285,26 +285,39 @@ class AgentService:
         agent_type: Optional[str] = None,
         offset: int = 0,
         limit: int = 100
-    ) -> Tuple[List[Agent], int]:
+    ) -> List[Agent]:
         """
-        List agents.
+        List agents with optional filtering.
         
         Args:
-            user_id: Filter by user ID
-            agent_type: Filter by agent type
-            offset: Pagination offset
-            limit: Pagination limit
+            user_id: Optional user ID to filter by creator.
+            agent_type: Optional agent type to filter by.
+            offset: Number of records to skip (pagination).
+            limit: Maximum number of records to return (pagination).
             
         Returns:
-            Tuple of (list of agents, total count)
+            List of agents matching the criteria.
         """
-        # Get agents from database
-        return await self.agent_repository.list(
-            user_id=user_id,
-            agent_type=agent_type,
-            offset=offset,
-            limit=limit
-        )
+        try:
+            # Define filter conditions
+            filters = {}
+            if user_id:
+                filters["user_id"] = user_id
+            if agent_type:
+                filters["agent_type"] = agent_type
+            
+            # Query the database
+            agents, _ = await self.agent_repository.list(
+                user_id=user_id,
+                agent_type=agent_type,
+                offset=offset,
+                limit=limit
+            )
+            
+            return agents
+        except Exception as e:
+            logger.error(f"Error listing agents: {str(e)}")
+            raise
     
     async def execute_agent(
         self,
