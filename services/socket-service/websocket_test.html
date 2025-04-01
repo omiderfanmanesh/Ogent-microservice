@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        #console { background-color: #f4f4f4; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; }
+        button { padding: 5px 10px; margin-right: 10px; }
+        input { padding: 5px; width: 300px; }
+    </style>
+</head>
+<body>
+    <h1>Socket.IO Test Client</h1>
+    
+    <div>
+        <label for="token">Auth Token:</label>
+        <input type="text" id="token" placeholder="Enter authentication token">
+    </div>
+    <br>
+    <div>
+        <button onclick="connect()">Connect</button>
+        <button onclick="disconnect()">Disconnect</button>
+    </div>
+    <br>
+    <div>
+        <label for="executionId">Execution ID:</label>
+        <input type="text" id="executionId" placeholder="Enter execution ID">
+        <button onclick="joinExecution()">Join Execution</button>
+        <button onclick="leaveExecution()">Leave Execution</button>
+    </div>
+    <br>
+    <div>
+        <h3>Console Output:</h3>
+        <div id="console"></div>
+    </div>
+
+    <script>
+        let socket = null;
+        const consoleOutput = document.getElementById('console');
+
+        function log(message) {
+            const entry = document.createElement('div');
+            entry.textContent = `[${new Date().toISOString()}] ${message}`;
+            consoleOutput.appendChild(entry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function connect() {
+            const token = document.getElementById('token').value;
+            if (!token) {
+                log('Error: Token is required');
+                return;
+            }
+
+            try {
+                log('Attempting to connect...');
+                socket = io('http://localhost:8081/socket', {
+                    auth: { token }
+                });
+
+                socket.on('connect', () => {
+                    log('Connected to Socket.IO server');
+                });
+
+                socket.on('connect_error', (error) => {
+                    log(`Connection error: ${error.message}`);
+                });
+
+                socket.on('execution-status', (data) => {
+                    log(`Execution status update: ${JSON.stringify(data)}`);
+                });
+
+                socket.on('execution-started', (data) => {
+                    log(`Execution started: ${JSON.stringify(data)}`);
+                });
+
+                socket.on('disconnect', () => {
+                    log('Disconnected from Socket.IO server');
+                });
+            } catch (error) {
+                log(`Error: ${error.message}`);
+            }
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                log('Manually disconnected');
+            } else {
+                log('Not connected');
+            }
+        }
+
+        function joinExecution() {
+            const executionId = document.getElementById('executionId').value;
+            if (!socket) {
+                log('Error: Not connected');
+                return;
+            }
+            if (!executionId) {
+                log('Error: Execution ID is required');
+                return;
+            }
+
+            socket.emit('join-execution', executionId);
+            log(`Joined execution: ${executionId}`);
+        }
+
+        function leaveExecution() {
+            const executionId = document.getElementById('executionId').value;
+            if (!socket) {
+                log('Error: Not connected');
+                return;
+            }
+            if (!executionId) {
+                log('Error: Execution ID is required');
+                return;
+            }
+
+            socket.emit('leave-execution', executionId);
+            log(`Left execution: ${executionId}`);
+        }
+    </script>
+</body>
+</html> 
