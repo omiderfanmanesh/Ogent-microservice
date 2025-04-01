@@ -406,4 +406,7 @@ async def _stream_execution(
         yield f"data: {error_data}\n\n"
     finally:
         # Send end event
-        yield f"data: {json.dumps({'type': 'end'})}\n\n" 
+        yield f"data: {json.dumps({'type': 'end'})}\n\n"
+
+# Export router for import in other modules
+__all__ = ['router'] 
