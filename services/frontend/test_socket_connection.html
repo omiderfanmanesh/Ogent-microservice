@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Frontend Socket.IO Test</title>
+    <script src="https://cdn.socket.io/4.6.0/socket.io.min.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; max-width: 800px; margin: 0 auto; }
+        .container { margin-top: 20px; }
+        #console { background-color: #f4f4f4; padding: 10px; height: 300px; overflow-y: scroll; margin-bottom: 10px; border: 1px solid #ccc; }
+        button { padding: 8px 16px; margin-right: 10px; background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:disabled { background-color: #cccccc; }
+        input, select { padding: 8px; width: 300px; margin-bottom: 10px; }
+        .form-group { margin-bottom: 15px; }
+        .status { padding: 5px 10px; border-radius: 4px; display: inline-block; margin-left: 10px; }
+        .connected { background-color: #4CAF50; color: white; }
+        .disconnected { background-color: #f44336; color: white; }
+        h2 { margin-top: 30px; }
+    </style>
+</head>
+<body>
+    <h1>Frontend Socket.IO Connection Test</h1>
+    <p>This tool tests the Socket.IO connection from the frontend to the backend services through the API Gateway.</p>
+    
+    <div class="form-group">
+        <label for="gateway-url">API Gateway URL:</label>
+        <input type="text" id="gateway-url" value="http://localhost:8081" />
+    </div>
+    
+    <div class="form-group">
+        <label for="socket-path">Socket.IO Path:</label>
+        <input type="text" id="socket-path" value="/socket" />
+    </div>
+    
+    <div class="form-group">
+        <label for="auth-token">Auth Token:</label>
+        <input type="text" id="auth-token" placeholder="Paste your authentication token here" />
+        <button onclick="getTokenFromLocalStorage()">Get from localStorage</button>
+    </div>
+    
+    <div>
+        <button id="connect-btn" onclick="connect()">Connect</button>
+        <button id="disconnect-btn" onclick="disconnect()" disabled>Disconnect</button>
+        <span id="connection-status" class="status disconnected">Disconnected</span>
+    </div>
+    
+    <h2>Execution Testing</h2>
+    
+    <div class="form-group">
+        <label for="execution-id">Execution ID:</label>
+        <input type="text" id="execution-id" placeholder="Enter execution ID" />
+    </div>
+    
+    <div>
+        <button onclick="joinExecution()" id="join-btn" disabled>Join Execution</button>
+        <button onclick="leaveExecution()" id="leave-btn" disabled>Leave Execution</button>
+    </div>
+    
+    <h2>Send Test Status Update</h2>
+    
+    <div class="form-group">
+        <label for="status">Status:</label>
+        <select id="status">
+            <option value="queued">Queued</option>
+            <option value="running">Running</option>
+            <option value="completed">Completed</option>
+            <option value="failed">Failed</option>
+        </select>
+    </div>
+    
+    <div class="form-group">
+        <label for="progress">Progress:</label>
+        <input type="number" id="progress" min="0" max="100" value="50" />
+    </div>
+    
+    <div class="form-group">
+        <label for="output">Output:</label>
+        <input type="text" id="output" value="Test output from frontend" />
+    </div>
+    
+    <div>
+        <button onclick="sendStatus()" id="send-status-btn" disabled>Send Status Update</button>
+    </div>
+    
+    <h2>Console Output:</h2>
+    <div id="console"></div>
+
+    <script>
+        let socket = null;
+        const consoleOutput = document.getElementById('console');
+        const connectBtn = document.getElementById('connect-btn');
+        const disconnectBtn = document.getElementById('disconnect-btn');
+        const joinBtn = document.getElementById('join-btn');
+        const leaveBtn = document.getElementById('leave-btn');
+        const sendStatusBtn = document.getElementById('send-status-btn');
+        const connectionStatus = document.getElementById('connection-status');
+
+        function log(message, type = 'info') {
+            const entry = document.createElement('div');
+            entry.style.color = type === 'error' ? 'red' : 
+                               type === 'success' ? 'green' : 
+                               type === 'warning' ? 'orange' : 'black';
+            entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            consoleOutput.appendChild(entry);
+            consoleOutput.scrollTop = consoleOutput.scrollHeight;
+        }
+
+        function getTokenFromLocalStorage() {
+            try {
+                const authData = JSON.parse(localStorage.getItem('ogent_auth'));
+                if (authData && authData.token) {
+                    document.getElementById('auth-token').value = authData.token;
+                    log('Token retrieved from localStorage', 'success');
+                } else {
+                    log('No token found in localStorage. Please log in to the frontend app first.', 'warning');
+                }
+            } catch (error) {
+                log(`Error getting token from localStorage: ${error.message}`, 'error');
+            }
+        }
+
+        function connect() {
+            const gatewayUrl = document.getElementById('gateway-url').value;
+            const socketPath = document.getElementById('socket-path').value;
+            const token = document.getElementById('auth-token').value;
+            
+            if (!token) {
+                log('Error: Token is required', 'error');
+                return;
+            }
+
+            try {
+                log('Attempting to connect...');
+                const socketUrl = `${gatewayUrl}${socketPath}`;
+                log(`Connecting to: ${socketUrl}`);
+                
+                socket = io(socketUrl, {
+                    auth: { token },
+                    transports: ['websocket', 'polling'],
+                    reconnection: true,
+                    reconnectionAttempts: 5,
+                    reconnectionDelay: 1000,
+                });
+
+                socket.on('connect', () => {
+                    log('Connected to Socket.IO server', 'success');
+                    connectionStatus.textContent = 'Connected';
+                    connectionStatus.className = 'status connected';
+                    connectBtn.disabled = true;
+                    disconnectBtn.disabled = false;
+                    joinBtn.disabled = false;
+                    leaveBtn.disabled = false;
+                    sendStatusBtn.disabled = false;
+                });
+
+                socket.on('connect_error', (error) => {
+                    log(`Connection error: ${error.message}`, 'error');
+                    connectionStatus.textContent = 'Connection Error';
+                    connectionStatus.className = 'status disconnected';
+                });
+
+                socket.on('execution-status', (data) => {
+                    log(`Execution status update: ${JSON.stringify(data)}`);
+                });
+
+                socket.on('execution-started', (data) => {
+                    log(`Execution started: ${JSON.stringify(data)}`);
+                });
+
+                socket.on('disconnect', () => {
+                    log('Disconnected from Socket.IO server', 'warning');
+                    connectionStatus.textContent = 'Disconnected';
+                    connectionStatus.className = 'status disconnected';
+                    connectBtn.disabled = false;
+                    disconnectBtn.disabled = true;
+                    joinBtn.disabled = true;
+                    leaveBtn.disabled = true;
+                    sendStatusBtn.disabled = true;
+                });
+            } catch (error) {
+                log(`Error: ${error.message}`, 'error');
+            }
+        }
+
+        function disconnect() {
+            if (socket) {
+                socket.disconnect();
+                socket = null;
+                log('Manually disconnected', 'warning');
+                connectionStatus.textContent = 'Disconnected';
+                connectionStatus.className = 'status disconnected';
+                connectBtn.disabled = false;
+                disconnectBtn.disabled = true;
+                joinBtn.disabled = true;
+                leaveBtn.disabled = true;
+                sendStatusBtn.disabled = true;
+            } else {
+                log('Not connected');
+            }
+        }
+
+        function joinExecution() {
+            const executionId = document.getElementById('execution-id').value;
+            if (!socket) {
+                log('Error: Not connected', 'error');
+                return;
+            }
+            if (!executionId) {
+                log('Error: Execution ID is required', 'error');
+                return;
+            }
+
+            socket.emit('join-execution', executionId);
+            log(`Joined execution: ${executionId}`, 'success');
+        }
+
+        function leaveExecution() {
+            const executionId = document.getElementById('execution-id').value;
+            if (!socket) {
+                log('Error: Not connected', 'error');
+                return;
+            }
+            if (!executionId) {
+                log('Error: Execution ID is required', 'error');
+                return;
+            }
+
+            socket.emit('leave-execution', executionId);
+            log(`Left execution: ${executionId}`, 'warning');
+        }
+
+        function sendStatus() {
+            const executionId = document.getElementById('execution-id').value;
+            const status = document.getElementById('status').value;
+            const progress = parseInt(document.getElementById('progress').value);
+            const output = document.getElementById('output').value;
+            
+            if (!executionId) {
+                log('Error: Execution ID is required', 'error');
+                return;
+            }
+            
+            const gatewayUrl = document.getElementById('gateway-url').value;
+            const token = document.getElementById('auth-token').value;
+            
+            const payload = {
+                executionId,
+                status,
+                progress,
+                output
+            };
+            
+            log(`Sending status update: ${JSON.stringify(payload)}`);
+            
+            fetch(`${gatewayUrl}/socket-http/api/execution-status`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${token}`
+                },
+                body: JSON.stringify(payload)
+            })
+            .then(response => response.json())
+            .then(data => {
+                log(`Status update response: ${JSON.stringify(data)}`, 'success');
+            })
+            .catch(error => {
+                log(`Error sending status update: ${error.message}`, 'error');
+            });
+        }
+    </script>
+</body>
+</html> 
