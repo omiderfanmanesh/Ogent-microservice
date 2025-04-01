@@ -9,7 +9,7 @@ This document tracks the status of each service in the Ogent Microservice archit
 | Auth Service | ✅ Working | Manual testing | Authentication functionality is working correctly |
 | LangChain Agent | ✅ Working | Verified with tests | Agent creation and operation is functional |
 | Command Execution | ✅ Working | Full verification passed | All tests pass including integration tests |
-| API Gateway | ❓ Unknown | Not tested yet | Need to verify routing and integration |
+| API Gateway | ✅ Working | Manual testing | Proxy routing to agent and command services verified |
 | Frontend | ❓ Unknown | Not tested yet | Need to verify UI functionality |
 | Socket Service | ❓ Unknown | Not tested yet | Need to verify socket connections |
 
@@ -32,6 +32,13 @@ This document tracks the status of each service in the Ogent Microservice archit
 - Properly rejects disallowed commands
 - Can process complex commands
 - Integration with Agent service is working
+
+### API Gateway
+- Service starts correctly
+- Proxy routing to Auth service, Agent service, and Command Execution service works
+- Health check endpoint is operational
+- Resolves service hostnames correctly in the Docker network
+- Successfully tested agent health endpoint via proxy
 
 ## Next Steps
 1. Test API Gateway service
