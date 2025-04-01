@@ -11,7 +11,7 @@ This document tracks the status of each service in the Ogent Microservice archit
 | Command Execution | ✅ Working | Full verification passed | All tests pass including integration tests |
 | API Gateway | ✅ Working | Manual testing | Proxy routing to agent and command services verified |
 | Frontend | ❓ Unknown | Not tested yet | Need to verify UI functionality |
-| Socket Service | ❓ Unknown | Not tested yet | Need to verify socket connections |
+| Socket Service | ⚠️ Partially Working | Limited testing | Health endpoint works, API endpoints need further testing |
 
 ## Detailed Status
 
@@ -39,6 +39,14 @@ This document tracks the status of each service in the Ogent Microservice archit
 - Health check endpoint is operational
 - Resolves service hostnames correctly in the Docker network
 - Successfully tested agent health endpoint via proxy
+
+### Socket Service
+- Service starts correctly in Docker
+- Health check endpoint is operational
+- API access through the API Gateway is configured correctly
+- Auth service URL configuration has been updated
+- API endpoints need further testing with authentication
+- WebSocket functionality needs to be tested with a client
 
 ## Next Steps
 1. Test API Gateway service
