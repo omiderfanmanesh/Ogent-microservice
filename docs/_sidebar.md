@@ -23,5 +23,9 @@
   * [Test Strategy](/testing/test_strategy.md)
   * Services
     * [Auth Service Test Plan](/testing/services/auth_service/test_plan.md)
+    * [Command Execution Test Plan](/testing/services/command_execution/test_plan.md)
+    * [Socket Service Test Plan](/testing/services/socket_service/test_plan.md)
+    * [Frontend Test Plan](/testing/services/frontend/test_plan.md)
+  * [End-to-End Testing](/testing/end_to_end/test_plan.md)
 * User Guide
   * [Getting Started](/user-guide/getting-started.md)
