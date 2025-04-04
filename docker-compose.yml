@@ -1,33 +1,21 @@
 version: '3.8'
 
 services:
-  nginx:
-    image: nginx:latest
-    container_name: ogent-nginx
-    ports:
-      - "8080:80"
-    volumes:
-      - ./services/nginx/default.conf:/etc/nginx/conf.d/default.conf
-    depends_on:
-      - frontend
-      - api-gateway
-    networks:
-      - ogent_network
-
   frontend:
     build:
       context: ./services/frontend
       dockerfile: Dockerfile
+    ports:
+      - "3000:80"
+    environment:
+      - NODE_ENV=production
+    depends_on:
+      - api-gateway
     container_name: ogent-frontend
     restart: unless-stopped
     volumes:
       - ./services/frontend:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - REACT_APP_API_URL=http://localhost:8080/api
-      - REACT_APP_SOCKET_SERVICE_URL=http://localhost:8080/socket
-      - REACT_APP_COMMAND_SERVICE_URL=http://localhost:8080/command
     networks:
       - ogent_network
 
@@ -35,19 +23,23 @@ services:
     build:
       context: ./services/api-gateway
       dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    environment:
+      - AUTH_SERVICE_URL=http://auth-service:80/api
+      - AGENT_SERVICE_URL=http://agent-service:80/api
+      - SOCKET_SERVICE_URL=http://socket-service:3002
+      - COMMAND_SERVICE_URL=http://command-execution:5000/api
+    depends_on:
+      - auth-service
+      - agent-service
+      - socket-service
+      - command-execution
     container_name: ogent-api-gateway
     restart: unless-stopped
-    ports:
-      - "8081:8080"
     volumes:
       - ./services/api-gateway:/app
       - /app/node_modules
-    environment:
-      - NODE_ENV=development
-      - AUTH_SERVICE_URL=http://ogent-auth-service-1:80/api
-      - AGENT_SERVICE_URL=http://172.18.0.7:8000/api
-      - SOCKET_SERVICE_URL=http://ogent-socket-service:3002
-      - COMMAND_SERVICE_URL=http://ogent-command-execution:5000/api
     networks:
       - ogent_network
 
@@ -57,6 +49,8 @@ services:
       dockerfile: Dockerfile
     container_name: ogent-auth-service
     restart: unless-stopped
+    ports:
+      - "8088:80"
     volumes:
       - ./services/auth-service:/var/www/html
     environment:
@@ -76,6 +70,8 @@ services:
     image: mysql:8.0
     container_name: ogent-auth-db
     restart: unless-stopped
+    ports:
+      - "33061:3306"
     environment:
       - MYSQL_DATABASE=ogent_auth
       - MYSQL_USER=ogent
@@ -172,6 +168,8 @@ services:
     image: postgres:13
     container_name: ogent-db
     restart: unless-stopped
+    ports:
+      - "54321:5432"
     environment:
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=postgres
@@ -189,4 +187,4 @@ volumes:
   auth-db-data:
   command-execution-data:
   ubuntu-target-data:
-  db-data: 
+  db-data:

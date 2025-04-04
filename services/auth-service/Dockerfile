@@ -7,6 +7,8 @@ RUN apt-get update && apt-get install -y \
     libpng-dev \
     libonig-dev \
     libxml2-dev \
+    libssl-dev \
+    libzip-dev \
     zip \
     unzip \
     libpq-dev \
@@ -17,7 +19,19 @@ RUN apt-get update && apt-get install -y \
 RUN apt-get clean && rm -rf /var/lib/apt/lists/*
 
 # Install PHP extensions
-RUN docker-php-ext-install pdo pdo_pgsql mbstring exif pcntl bcmath gd
+# Changed approach to avoid tokenizer issue
+RUN docker-php-ext-configure gd && \
+    docker-php-ext-install -j$(nproc) \
+    pdo \
+    pdo_mysql \
+    pdo_pgsql \
+    mbstring \
+    exif \
+    pcntl \
+    bcmath \
+    gd \
+    xml \
+    zip
 
 # Get latest Composer
 COPY --from=composer:latest /usr/bin/composer /usr/bin/composer
@@ -40,6 +54,12 @@ RUN cp -r /tmp/laravel/. /var/www/html/ && \
 
 # Copy custom files over the Laravel installation
 COPY . /var/www/html/
+
+# Configure PHP-FPM to use Unix socket
+COPY www-socket.conf /usr/local/etc/php-fpm.d/www-socket.conf
+
+# Ensure /var/run exists and is writable by www-data for the socket
+RUN mkdir -p /var/run && chown www-data:www-data /var/run
 
 # Configure Nginx
 COPY nginx.conf /etc/nginx/sites-available/default

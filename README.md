@@ -1,143 +1,152 @@
-# Ogent - Agent Platform
+# Ogent Microservices
 
-Ogent is a comprehensive platform for creating, managing, and running autonomous agents. It provides a secure environment for execution of agent actions through a command execution service with a dedicated Ubuntu target.
+A modern microservices architecture for intelligent agent execution and command management.
+
+## System Overview
+
+Ogent is a distributed system composed of several microservices that work together to provide:
+- User authentication and authorization
+- AI agent creation and management
+- Secure command execution
+- Real-time updates via WebSockets
+- Frontend UI for interacting with the system
 
 ## Architecture
 
-The platform consists of several microservices:
+The system follows a microservice architecture with the following components:
 
-- **Frontend**: React.js-based UI for interacting with the platform
-- **Auth Service**: Laravel-based authentication and authorization service
-- **API Gateway**: Routes requests to the appropriate services
-- **Socket Service**: Provides real-time communication capabilities
-- **Command Execution Service**: Securely executes commands on the target machine
-- **Ubuntu Target**: A dedicated Ubuntu environment for running agent commands
+- **API Gateway**: Routes requests to appropriate services and handles cross-cutting concerns
+- **Auth Service**: Manages user authentication and authorization
+- **LangChain Agent Service**: Creates and manages AI agents
+- **Command Execution Service**: Safely executes system commands
+- **Socket Service**: Provides real-time updates via WebSockets
+- **Frontend**: React-based UI for interacting with the system
+
+![Architecture Diagram](./docs/architecture.png)
+
+## Services
+
+### API Gateway
+- Entry point for all client requests
+- Routes requests to appropriate services
+- Handles authentication validation
+- Provides a unified API endpoint
+
+### Auth Service
+- User registration and authentication
+- JWT token generation and validation
+- Role-based authorization
+- User profile management
+
+### LangChain Agent Service
+- Creates AI agents using LangChain
+- Manages agent configurations
+- Handles agent execution requests
+- Integrates with Command Execution service
+
+### Command Execution Service
+- Securely executes system commands
+- Implements execution permission controls
+- Command execution status tracking
+- Real-time command output streaming
+
+### Socket Service
+- Real-time WebSocket connections
+- Execution status updates
+- Supports client subscription to specific executions
+- Integration with Command Execution service
+
+### Frontend
+- React-based single-page application
+- User authentication interface
+- Command execution and monitoring UI
+- Real-time updates via WebSocket
 
 ## Getting Started
 
 ### Prerequisites
-
 - Docker and Docker Compose
-- Git
+- Node.js 16+
+- Python 3.9+
 
-### Setup
+### Running the System
 
 1. Clone the repository:
-   ```bash
-   git clone https://github.com/your-username/ogent.git
-   cd ogent
-   ```
-
-2. Create `.env` files from the examples:
-   ```bash
-   cp services/api-gateway/.env.example services/api-gateway/.env
-   cp services/auth-service/.env.example services/auth-service/.env
-   cp services/socket-service/.env.example services/socket-service/.env
-   cp services/command-execution/.env.example services/command-execution/.env
-   ```
-
-3. Start all services:
-   ```bash
-   docker-compose up -d
-   ```
-
-4. Initialize the database:
-   ```bash
-   docker-compose exec auth-service php artisan migrate --seed
-   ```
-
-### Default Login Credentials
-
-- Admin user: `admin@example.com` / `admin123`
-- Regular user: `user@example.com` / `user123`
-
-## Features
-
-- **Authentication**: Secure user authentication and role-based access control
-- **Agent Management**: Create, edit, and manage autonomous agents
-- **Command Execution**: Execute commands securely on the target machine
-- **Real-time Updates**: Get real-time updates on agent executions
-- **Role-based Access Control**: Control who can perform what actions
-
-## Testing the Command Execution
-
-1. Log in to the web interface at http://localhost
-2. Navigate to "Command" in the main menu
-3. Enter a command like `ls -la /tmp` and click Execute
-4. View the real-time execution logs
-
-For SSH access to the Ubuntu target (for debugging):
-```bash
-ssh -p 2222 ubuntu@localhost
 ```
-Password: `ubuntu`
-
-## Development
-
-### Service-specific Development
-
-Each service can be developed independently:
-
-#### Frontend
-```bash
-cd services/frontend
-npm install
-npm start
+git clone https://github.com/omiderfanmanesh/Ogent-microservice.git
+cd Ogent-microservice
 ```
 
-#### Auth Service
-```bash
-cd services/auth-service
-composer install
-php artisan serve
+2. Start all services using Docker Compose:
+```
+docker-compose up -d
 ```
 
-#### Socket Service
-```bash
-cd services/socket-service
-npm install
-npm run dev
+3. Access the application:
+- Frontend UI: http://localhost:3000
+- API Gateway: http://localhost:8081
+
+### Service URLs
+
+| Service | Internal URL | External URL |
+|---------|--------------|-------------|
+| Frontend | http://ogent-frontend:80 | http://localhost:3000 |
+| API Gateway | http://ogent-api-gateway:8081 | http://localhost:8081 |
+| Auth Service | http://ogent-auth-service:5000 | via API Gateway |
+| LangChain Agent | http://ogent-agent-service:8000 | via API Gateway |
+| Command Execution | http://ogent-command-service:5001 | via API Gateway |
+| Socket Service | http://ogent-socket-service:3002 | via API Gateway |
+
+## Testing
+
+The project includes comprehensive testing tools for each service:
+
+### Individual Service Testing
+- Auth Service: `services/auth-service/verify_service.py`
+- Command Execution: `services/command-execution/tools/verify_service.py`
+- Socket Service: `services/socket-service/verify_all.sh`
+- Frontend: `services/frontend/verify_frontend.sh`
+
+### End-to-End Testing
+Run the end-to-end test script:
+```
+./end_to_end_test.sh
 ```
 
-#### Command Execution Service
-```bash
-cd services/command-execution
-pip install -r requirements.txt
-python app.py
-```
+This script verifies that all services are operational and properly integrated.
 
-## Security Considerations
+### Manual Testing
+For WebSocket and real-time functionality testing:
+1. Open `services/frontend/test_socket_connection.html` in a browser
+2. Log in to obtain an authentication token
+3. Test WebSocket connections and real-time updates
 
-- The command execution service only allows a whitelist of commands
-- Commands are executed in a sandboxed environment
-- Role-based permissions control who can execute commands
-- All API requests require authentication
+## Configuration
 
-## API Key Management
+Each service can be configured using environment variables defined in the `docker-compose.yml` file.
 
-The platform requires an OpenAI API key to function. For security reasons, never commit API keys to the repository.
+Key configuration options:
+- `JWT_SECRET`: Secret key for JWT token generation
+- `AUTH_SERVICE_URL`: URL for the Auth Service
+- `COMMAND_SERVICE_URL`: URL for the Command Execution Service
+- `AGENT_SERVICE_URL`: URL for the LangChain Agent Service
+- `SOCKET_SERVICE_URL`: URL for the Socket Service
 
-### Setting up API Keys
+## Contributing
 
-1. Copy the environment example files:
-   ```bash
-   cp services/langchain-agent/.env.example services/langchain-agent/.env
-   ```
-
-2. Add your OpenAI API key to the `.env` file:
-   ```
-   OPENAI_API_KEY=your_api_key_here
-   ```
-
-3. For production, create and modify the production environment file:
-   ```bash
-   cp .env.prod.example .env.prod
-   ```
-
-4. The project uses GPT-4o-mini by default. You can change this in the environment files.
-
-5. The repository's `.gitignore` is configured to exclude all `.env` files except example files, ensuring your API keys stay private.
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/your-feature`
+3. Commit your changes: `git commit -m 'Add your feature'`
+4. Push to the branch: `git push origin feature/your-feature`
+5. Submit a pull request
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details. 
+This project is licensed under the MIT License - see the LICENSE file for details.
+
+## Acknowledgments
+
+- LangChain for AI agent capabilities
+- Socket.IO for real-time functionality
+- Express.js and Nginx for API Gateway
+- React and Material UI for frontend implementation 

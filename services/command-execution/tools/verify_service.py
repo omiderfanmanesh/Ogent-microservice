@@ -62,7 +62,7 @@ def test_execute_allowed_command():
         
         if response.status_code in [200, 201]:
             data = response.json()
-            execution_id = data.get("execution_id")
+            execution_id = data.get("executionId")
             logger.info(f"Command execution initiated with ID: {execution_id}")
             
             # Wait for execution to complete
@@ -149,7 +149,7 @@ def test_complex_command():
         
         if response.status_code in [200, 201]:
             data = response.json()
-            execution_id = data.get("execution_id")
+            execution_id = data.get("executionId")
             logger.info(f"Complex command execution initiated with ID: {execution_id}")
             
             # Wait for execution to complete

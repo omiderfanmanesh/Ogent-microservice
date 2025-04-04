@@ -55,4 +55,11 @@ Thumbs.db
 *.sublime-project
 *.sublime-workspace
 *.swp
-*.swo 
+*.swo
+
+# Project specific
+backup/
+*.new
+*.fixed
+test_*.php
+temp_*.php 

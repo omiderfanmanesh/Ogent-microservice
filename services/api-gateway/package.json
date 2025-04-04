@@ -1,20 +1,24 @@
 {
   "name": "api-gateway",
   "version": "1.0.0",
-  "description": "API Gateway for Ogent platform",
+  "description": "API Gateway for Ogent microservices",
   "main": "index.js",
   "scripts": {
     "start": "node index.js",
     "dev": "nodemon index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "debug": "node debug.js",
+    "test": "node test/auth-flow-test.js"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.3.1",
+    "dotenv": "^16.0.3",
     "express": "^4.18.2",
-    "http-proxy-middleware": "^2.0.6"
+    "http-proxy-middleware": "^2.0.6",
+    "node-fetch": "^2.7.0"
   },
   "devDependencies": {
-    "nodemon": "^3.0.1"
-  }
-} 
+    "nodemon": "^2.0.22"
+  },
+  "author": "",
+  "license": "ISC"
+}

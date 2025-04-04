@@ -52,7 +52,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="api/login")
 
 # Models
 class TokenData(BaseModel):
@@ -105,8 +105,8 @@ async def health():
     return {"status": "ok"}
 
 
-# Auth routes
-@app.post("/auth/login")
+# Auth routes - updated to use /api prefix
+@app.post("/api/login")
 async def login(request: Request):
     """Forward login request to auth service."""
     try:
@@ -122,7 +122,7 @@ async def login(request: Request):
         raise HTTPException(status_code=503, detail="Auth service unavailable")
 
 
-@app.post("/auth/register")
+@app.post("/api/register")
 async def register(request: Request):
     """Forward registration request to auth service."""
     try:
@@ -146,7 +146,10 @@ async def api_gateway(path: str, request: Request):
     client = app_client
     target_path = path
     
-    if path.startswith("auth/"):
+    # Special paths for auth service
+    if path.startswith("api/login") or path.startswith("api/register") or path.startswith("api/logout") or path.startswith("api/verify"):
+        client = auth_client
+    elif path.startswith("auth/"):
         client = auth_client
         # Rewrite path for auth service
         target_path = "api/" + path[5:]  # Remove 'auth/' prefix and add 'api/'

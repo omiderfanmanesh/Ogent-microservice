@@ -6,6 +6,7 @@ use App\Http\Controllers\AuthController;
 use App\Http\Controllers\UserController;
 use App\Http\Controllers\RoleController;
 use App\Http\Controllers\TestController;
+use App\Http\Controllers\HealthController;
 
 /*
 |--------------------------------------------------------------------------
@@ -17,6 +18,9 @@ use App\Http\Controllers\TestController;
 | be assigned to the "api" middleware group. Make something great!
 |
 */
+
+// Health check
+Route::get("/health", [HealthController::class, "index"]);
 
 // Test route
 Route::get('/test', [TestController::class, 'index']);
@@ -64,3 +68,4 @@ Route::middleware('auth:api')->group(function () {
         Route::post('/roles/{id}/permissions', [RoleController::class, 'assignPermissions']);
     });
 });
+Route::get("/debug", [App\Http\Controllers\DebugController::class, "debug"]);

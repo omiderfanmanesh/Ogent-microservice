@@ -101,7 +101,8 @@ def create_command_agent():
         
         if response.status_code in [200, 201]:
             data = response.json()
-            agent_id = data.get("id", agent_id)
+            # Handle both 'id' and 'agent_id' formats
+            agent_id = data.get("id", data.get("agent_id", agent_id))
             logger.info(f"Command agent created successfully with ID: {agent_id} ✅")
             return agent_id
         else:
