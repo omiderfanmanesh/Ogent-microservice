@@ -1,0 +1,11 @@
+version: '3.8'
+
+services:
+  nginx:
+    image: nginx:latest
+    volumes:
+      - ./services/nginx/default.conf:/etc/nginx/conf.d/default.conf:ro 
+
+  frontend:
+    environment:
+      - REACT_APP_AUTH_URL=http://localhost:8080/auth
